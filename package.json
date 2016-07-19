@@ -1,9 +1,14 @@
 {
-  "name": "socket-chat-example",
+  "name": "App",
   "version": "0.0.1",
-  "description": "my first socket.io app",
+  "description": "App",
   "dependencies": {
-    "express": "4.10.2",
-    "socket.io": "1.2.0"
-  }
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.15.2",
+    "moment": "^2.14.1",
+    "nodemailer": "^2.4.2",
+    "socket.io": "latest",
+    "vcards-js": "^2.3.1"
+  },
+  "author": "developer"
 }
