@@ -11,6 +11,7 @@ var express   = require('express')
   ,chat       = require('./controllers/chat')
   ,bodyParser = require('body-parser');
   //serve
+
   app.set('port', process.env.PORT || 3005);
   
   //mongoose.connect('mongodb://192.254.67.45/chatData', function(err){

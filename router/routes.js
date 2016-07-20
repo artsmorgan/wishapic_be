@@ -3,6 +3,7 @@ var config       = require('../config/config').main()
 	,chat        = require('../controllers/chat')
 	,preferences = require('../controllers/preferences')
 	,friends     = require('../controllers/friends')
+	,mock     = require('../controllers/mock')
 	,appPreferences     = require('../controllers/config');
 
 
@@ -30,5 +31,15 @@ exports.init = function(app){
 	app.post(API_PREFIX+'/preferences',preferences.main);
 
 	app.get(API_PREFIX+'/config',appPreferences.main);
+	// console.log(API_PREFIX+'/happeningNow');
+	app.get(API_PREFIX+'/happeningNow',mock.happeningNow);
+	app.get(API_PREFIX+'/picturesGranted',mock.picturesGranted);
+	app.get(API_PREFIX+'/wished',mock.wished);
+	app.get(API_PREFIX+'/granted',mock.granted);
+	app.get(API_PREFIX+'/locations',mock.locations);
+	app.get(API_PREFIX+'/tags',mock.tags);
+	app.get(API_PREFIX+'/followPerson',mock.followPerson);
+	app.get(API_PREFIX+'/following',mock.following);
+	app.get(API_PREFIX+'/followers',mock.followers);
 
 }
