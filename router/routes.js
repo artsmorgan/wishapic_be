@@ -3,7 +3,8 @@ var config       = require('../config/config').main()
 	,chat        = require('../controllers/chat')
 	,preferences = require('../controllers/preferences')
 	,friends     = require('../controllers/friends')
-	,mock     = require('../controllers/mock')
+	,mock     	 = require('../controllers/mock')
+	,pictures    = require('../controllers/pictures')
 	,appPreferences     = require('../controllers/config');
 
 
@@ -41,5 +42,11 @@ exports.init = function(app){
 	app.get(API_PREFIX+'/followPerson',mock.followPerson);
 	app.get(API_PREFIX+'/following',mock.following);
 	app.get(API_PREFIX+'/followers',mock.followers);
+
+	app.post(API_PREFIX+'/pictures',pictures.create);
+	app.get(API_PREFIX+'/pictures/:id',pictures.getPictureById);
+	app.get(API_PREFIX+'/pictures/happeningNow',pictures.getPictureByHappeningNow);
+	app.get(API_PREFIX+'/pictures/happeningNow/:userId',pictures.getPictureHappeningNowByUser);
+	app.get(API_PREFIX+'/pictures/:userId',pictures.getPictureByUser);
 
 }

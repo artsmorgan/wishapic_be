@@ -136,7 +136,8 @@ exports.login = function(req, res){
 				        	username : logged.username,
 				        	email : logged.email,
 				        	hash : logged.hashLogin,
-				        	lastLogin: logged.lastLogin
+				        	lastLogin: logged.lastLogin,
+				        	id: logged.id
 				        })
 		            });
 				} else{
