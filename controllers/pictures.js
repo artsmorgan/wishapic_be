@@ -6,8 +6,18 @@ var Picture = mongoose.model('Picture', pictureModel);
 var moment 		= require('moment');
 var error = {};
 
+picturesController.hasWhiteSpace = function(s) {
+  return /\s/g.test(s);
+}
+
 picturesController.parseTags = function(tags){
-	var res = tags.split(" ");
+	var res = '';
+	if(picturesController.hasWhiteSpace(tags)){
+		 res = tags.split(" ");	
+	}else{
+		res = tags;
+	}
+	
 	return res;
 }
 
@@ -18,7 +28,7 @@ picturesController.getEndpublishDate = function(timmer){
 }
 
 exports.create = function(req,res){
-	console.log(req);
+	// console.log(req);
 	var now = moment();
 	var picture = new Picture();	
 		picture.userId 			= req.body.userId; 

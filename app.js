@@ -13,6 +13,7 @@ var express   = require('express')
   //serve
 
   app.set('port', process.env.PORT || 3005);
+
   
   //mongoose.connect('mongodb://192.254.67.45/chatData', function(err){
   mongoose.connect('mongodb://localhost/wishapic', function(err){
@@ -29,8 +30,10 @@ var express   = require('express')
 
 
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
+// app.use( bodyParser({limit: '50mb'}));
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-  extended: true
+  extended: true,
+  limit: '50mb'
 }));
 
 app.use(function (req, res, next) {
