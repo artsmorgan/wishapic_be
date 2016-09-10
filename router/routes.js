@@ -5,6 +5,7 @@ var config       = require('../config/config').main()
 	,friends     = require('../controllers/friends')
 	,mock     	 = require('../controllers/mock')
 	,pictures    = require('../controllers/pictures')
+	,notifications    = require('../controllers/notifications')
 	,appPreferences     = require('../controllers/config');
 
 
@@ -32,10 +33,17 @@ exports.init = function(app){
 	app.post(API_PREFIX+'/preferences',preferences.main);
 
 	app.get(API_PREFIX+'/config',appPreferences.main);
-	// console.log(API_PREFIX+'/happeningNow');
 	app.get(API_PREFIX+'/happeningNow',mock.happeningNow);
 	app.get(API_PREFIX+'/picturesGranted',mock.picturesGranted);
-	app.get(API_PREFIX+'/wished',mock.wished);
+	// app.get(API_PREFIX+'/wished',mock.wished);
+	//create wish
+	app.post(API_PREFIX+'/wished',notifications.createWish);
+	app.get(API_PREFIX+'/notifications/:userId',notifications.all);
+	app.get(API_PREFIX+'/wished/:userId',notifications.getNotificationsWished);
+	
+	//create granted
+	app.post(API_PREFIX+'/granted',notifications.createGranted);
+
 	app.get(API_PREFIX+'/granted',mock.granted);
 	app.get(API_PREFIX+'/locations',mock.locations);
 	app.get(API_PREFIX+'/tags',mock.tags);
@@ -44,9 +52,12 @@ exports.init = function(app){
 	app.get(API_PREFIX+'/followers',mock.followers);
 
 	app.post(API_PREFIX+'/pictures',pictures.create);
-	app.get(API_PREFIX+'/pictures/:id',pictures.getPictureById);
-	app.get(API_PREFIX+'/pictures/happeningNow',pictures.getPictureByHappeningNow);
+	app.get(API_PREFIX+'/pictures/pic/:id',pictures.getPictureById);
+	app.get(API_PREFIX+'/pictures/happeningNow',pictures.getHappeningNow);
+	// app.get(API_PREFIX+'/pictures/picturesByHappeningNow',pictures.getPictureByHappeningNow);//////
 	app.get(API_PREFIX+'/pictures/happeningNow/:userId',pictures.getPictureHappeningNowByUser);
-	app.get(API_PREFIX+'/pictures/:userId',pictures.getPictureByUser);
+	app.get(API_PREFIX+'/pictures/user/:userId',pictures.getPictureByUser);
+
+	app.get(API_PREFIX+'/test',pictures.testGetEndpublishDate);
 
 }

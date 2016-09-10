@@ -7,10 +7,10 @@ exports.schema = function(req, res){
 			tags:String, //Who initiates the chat
 			description:String, 	//Who initiates the chat
 			location:String, 	//Who initiates the chat
-			location:String, 	//Who initiates the chat
+			// location:String, 	//Who initiates the chat
 			timmer:String, 	//Who initiates the chat
-			dateCreated:String, //Who gets the chat	
-			dateEndPublish:String, //Who initiates the chat		
+			dateCreated:Date, //Who gets the chat	
+			dateEndPublish:Date, //Who initiates the chat		
 			url:String, //Who initiates the chat		
 			isFixed:Boolean, //Who initiates the chat		
 			views:Number 	//Who initiates the chat
