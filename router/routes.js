@@ -19,12 +19,19 @@ exports.init = function(app){
 	app.get(API_PREFIX+'/activate',user.activate);
 	app.post(API_PREFIX+'/user/create',user.create);
 	app.get(API_PREFIX+'/userOnline',user.isUserOnline);
+	
 	//Chat
-	app.post(API_PREFIX+'/chat',chat.getChatsByUser);
+	app.get(API_PREFIX+'/chat/getByUser/:userId',chat.getChatsListByUser);
 	app.post(API_PREFIX+'/chat/message',chat.messagePost);
 	app.post(API_PREFIX+'/chat/create',chat.create);
-	app.get(API_PREFIX+'/chat/id',chat.getChatById);
+	app.get(API_PREFIX+'/chat/id/:chatId',chat.getChatById);
+	app.get(API_PREFIX+'/chat/hasChat/:receiver/:sender',chat.hasChats);
+	app.post(API_PREFIX+'/chat/updateMessageById',chat.updateMessageById);//getNewMessage
+	app.get(API_PREFIX+'/chat/getNewMessage/:chatId/:userId',chat.getNewMessage);//
+	//
+
 	//Follow User
+	app.get(API_PREFIX+'/user/get/:id',user.getUserById);
 	app.get(API_PREFIX+'/user/:id/followers',friends.getFollowersByUser);
 	app.get(API_PREFIX+'/user/:id/following',friends.getFollowingByUser);
 	app.post(API_PREFIX+'/followers/add',friends.add);
@@ -35,7 +42,7 @@ exports.init = function(app){
 	app.get(API_PREFIX+'/config',appPreferences.main);
 	app.get(API_PREFIX+'/happeningNow',mock.happeningNow);
 	app.get(API_PREFIX+'/picturesGranted',mock.picturesGranted);
-	// app.get(API_PREFIX+'/wished',mock.wished);
+	
 	//create wish
 	app.post(API_PREFIX+'/wished',notifications.createWish);
 	app.get(API_PREFIX+'/notifications/:userId',notifications.all);
@@ -59,5 +66,7 @@ exports.init = function(app){
 	app.get(API_PREFIX+'/pictures/user/:userId',pictures.getPictureByUser);
 
 	app.get(API_PREFIX+'/test',pictures.testGetEndpublishDate);
+
+	
 
 }

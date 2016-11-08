@@ -3,38 +3,128 @@ var bcrypt = require('bcrypt-nodejs');
 var mongoose = require('mongoose');
 var Chat = require('../models/chat');
 var Message = require('../models/chat-message');
+var async = require('async');
+
+var userModel = require('../models/user').schema();
+// var User = mongoose.model('User', userModel);
+var User;
+
+if (mongoose.models.User) {
+  User = mongoose.model('User');
+} else {
+  User = mongoose.model('User', userModel);
+}
+
 // var Chat = mongoose.model('Chat', chatModel);
 // var Message = mongoose.model('Message', messageModel);
 var error = {};
 
 chatController._postMessage = function(req,cb){
-	var chatId = req.body.roomId;
-	
-	// console.log(chatId);
+	console.log('req.body',req.body);
 	var message = new Message();
 		message.userTo = req.body.sender;
 		message.userFrom = req.body.receiver;
-		message.msj = req.body.message || null;
+		message.message = req.body.message || null;
 		message.media = req.body.media || null;
-		message.roomId = chatId;
+
 		message.readUnreadFlg = 0;
 		message.save(function(err,messageObj) {
 	        if (err)
-	            res.send(err);
+	            cb(err);
+	  
+	        //prepare the haschat obj	        
+	        var checkchatobj = {
+	        	params: {
+	        		receiver: req.body.receiver,
+	        		sender: req.body.sender
+	        	}
+	        };
 
-	    	Chat.findOne({ '_id': chatId },  function (err, chat) {
-	    		
-	    		var messages = chat.messages;    		
-	    		var newMessages = messages.push(messageObj.id);	    		   			    		
-	    		chat.messages = messages;	    		
-	    		chat.save(function(err,chatObj) {	    			
-	    			cb(chatObj);
-	    		});
-        	});	        
+	        //has chat
+
+	        chatController._chatExists(checkchatobj, function(chat){
+	        	console.log('chat',chat);
+	        	var chatID = chat.chatId;
+
+				if(chat.count>0){
+					Chat.findOne({ '_id': chatID },  function (err, chatFounded) {	 
+						console.log('chatFounded',chatFounded);
+
+						messageObj.roomId = chatID;					
+						var messages = chatFounded.messages;    		
+			    		var newMessages = messages.push(messageObj.id);	    		   			    		
+			    		chatFounded.messages = messages;	    		
+			    		chatFounded.save(function(err,chatObj) {	    			
+			    			cb(chatObj);
+			    		});	
+					
+			    		
+		        	});	
+				}else{
+
+					//create new chat and append the message
+					var chat = new Chat();
+					chat.createdBy = req.body.sender;
+					chat.receiver = req.body.receiver; //test
+					chat.save(function(err,chatObj) {
+				        if (err)
+				            cb(err);
+
+						var messages = chatObj.messages;    		
+						var newMessages = messages.push(messageObj.id);	    		   			    		
+			    		chatObj.messages = messages;	    		
+			    		chatObj.save(function(err,nchatObj) {
+			    			console.log('nchatObj',nchatObj);
+				    		// message.roomId = chatID;
+							messageObj.roomId = nchatObj.id;
+							cb(nchatObj);
+							// messageObj.save(err, function(nm){
+							// 	console.log('nm',nm);					
+							// });	    			
+			    			
+			    		});
+				    });  
+				}
+			});
+	    	//end has chat         
 	    });
 
 	 
 }
+
+
+
+chatController._chatExists = function(req, cb){
+	var receiver = req.params.receiver;
+	var creator = req.params.sender;
+	// console.log('creator',creator);
+	// console.log('receiver',receiver);
+	Chat.find({
+		$and: [
+          	{ $or: [{createdBy: receiver}, {receiver: receiver }] },
+          	{ $or: [{createdBy: creator}, {receiver: creator }] }
+	      ]
+      	// $or: [{createdBy: creator}, {receiver: receiver }]
+      	// $or: [{createdBy: receiver}, {receiver: creator }]
+	  }, function (err, chats) {
+	  		// console.log('cl', chats.length);
+	  		var c = 0;
+	  		var count = 0;
+	  		if(chats.length>0){
+	  			c = chats[0].id;
+	  			count = chats.length;
+	  		}
+
+			cb({chatId: c, count: count});
+	  });
+}
+
+exports.hasChats = function(req, res){
+	chatController._chatExists(req, function(chats){
+		res.json(chats);	
+	});
+	
+};
 
 exports.init = function(io){
 //Socket Stuff
@@ -56,14 +146,74 @@ exports.init = function(io){
 
 }
 
+
+
 //Many chats
 exports.getChatsByUser = function(req,res){	
     Chat.find({
       $and: [
-          	{ $or: [{createdBy: req.body.userId}, {receiver: req.body.userId }] }
+          	{ $or: [{createdBy: req.params.userId}, {receiver: req.params.userId }] }
 	      ]
 	  }, function (err, chats) {
 	      res.json(chats);
+	  });
+}
+
+exports.getChatsListByUser = function(req,res){	
+    Chat.find({
+      $and: [
+          	{ $or: [{createdBy: req.params.userId}, {receiver: req.params.userId }] }
+	      ]
+	  }, function (err, chats) {
+
+	  		var calls = [];
+	  		var rst = [];
+	  		var format = chats.map(function(element){
+	  			
+	  			//i'm i the creator of the chat?
+	  			var lookingFor = '';	  			
+	  			
+	  			if(element['createdBy'] == req.params.userId){
+	  				lookingFor = 'receiver';
+	  			}else{
+	  				lookingFor = 'createdBy';
+	  			}
+
+	  			var obj = {};
+		  		calls.push(function(callback) {
+		  			// console.log('eelement[lookingFor]',element[lookingFor]);
+		  			// console.log('element[req.params.userId]',req.params.userId);
+
+		  			if(element[lookingFor] != req.params.userId){
+
+		  				User.findOne({"_id":element[lookingFor]},function(err, docs){
+		  					// console.log('docs',docs['id']);
+		  					var avatar = docs.avatar || '/images/nobody_m.original.jpg';
+			        		var avatarUrl = req.protocol + '://' + req.get('host') +avatar;
+							obj['chatID'] = element['id'];					
+							obj['userId'] = docs['id'];
+							obj['avatar'] = avatarUrl;
+							obj['username'] = docs.username || docs.email;
+							rst.push(obj);
+							callback(null, element);
+		  				});	
+		  			}	
+		  		});
+		  	});	
+
+	  		async.parallel(calls, function(err, result) {
+			    /* this code will run after all calls finished the job or
+			       when any of the calls passes an error */
+			    if (err)
+			        return console.log(err);
+			    // console.log('now',now);
+			    // console.log('docs',rst);
+			    res.json({
+		    		'docs':rst
+		    	});	
+			});
+
+	      
 	  });
 }
 
@@ -101,6 +251,7 @@ exports.create = function(req,res){
 
 exports.messagePost = function(req, res){
 	//resolve it
+	console.log('test');
 	chatController._postMessage(req,function(chats){
 		res.json({ "chats":  chats });	
 	})
@@ -108,12 +259,129 @@ exports.messagePost = function(req, res){
 }
 
 exports.getChatById = function(req,res){
-	//Chat Belongs to user
-	User.findOne({ '_id': req.body.userId },  function (err, userdata) {
-		Chat.findOne({ '_id': req.body.chatId },  function (err, chat) {	    		
-			res.json(chat);
-		});	
+	//Chat Belongs to user	
+	Chat.findOne({ '_id': req.params.chatId },  function (err, chat) {	    		
+		// var chat = [chat];
+		if(chat){
+			var calls = [];
+	  		var rst = [];
+	  			
+	  		var format = chat['messages'].map(function(element){
+	  			calls.push(function(callback) {		  		
+	  				var obj = {};
+	  				Message.findOne({"_id":element},function(err, docs){
+	  					console.log(docs);
+						rst.push(docs);
+						callback(null, element);
+	  				});			  			
+		  		});	
+	  			console.log(rst);
+	  		});
+	  		async.parallel(calls, function(err, result) {
+				res.json({
+		    		'messages':rst,
+		    		'chatId': req.params.chatId
+		    	});	
+	  		});	 
+	  	}else{
+	  		res.json({
+		    		'messages':0,
+		    		'chatId': 0
+		    	});	
+	  	}
+
+	  		
 	});	
+	
+}
+
+exports.updateMessageById = function(req,res){
+	//Chat Belongs to user	
+	var messages = req.body.messages;
+	// console.log(messages);
+	if(!messages){
+
+		res.json({
+			'messages':0,
+			'chatId': 0
+		});
+	}
+	
+	var calls = [];
+	var rst = [];
+	messages.map(function(element){		
+		console.log('element',element.id);
+		// var rst = [];
+		calls.push(function(callback) {		  					
+			Message.update({"_id":element.id}, {readUnreadFlg: 1}, function(err, affected, resp){
+				// console.log(affected);
+				// console.log(resp);
+				rst.push(affected);
+				callback(null, element);
+			});			  			
+		});	
+
+		// console.log(rst);
+	});		
+
+	async.parallel(calls, function(err, result) {
+		res.json({
+			'messages':rst,
+			'chatId': req.params.chatId
+		});	
+	});	 
+
+	
+}
+
+exports.getNewMessage = function(req,res){
+	
+	//Chat Belongs to user	
+	// console.log('req.params.userId',req.params.userId);
+	// console.log('req.params.chatId',req.params.chatId);
+
+	Chat.findOne({ '_id': req.params.chatId },  function (err, chat) {	    		
+		// var chat = [chat];
+		if(chat){
+			var calls = [];
+	  		var rst = [];
+	  			
+	  		var format = chat['messages'].map(function(element){
+	  			// console.log('element',element);
+	  			calls.push(function(callback) {		  		
+	  				var obj = {};
+	  				Message.findOne({	  									
+	  									"_id": element,
+	  									"readUnreadFlg": 0,
+	  									"userTo": req.params.userId
+	  								},
+	  				function(err, docs){
+	  					// console.log(docs);
+	  					
+	  					if(docs)
+							rst.push(docs);
+
+						callback(null, element);
+	  				});			  			
+		  		});	
+	  			console.log(rst);
+	  		});
+	  		async.parallel(calls, function(err, result) {
+				res.json({
+		    		'messages':rst,
+		    		'chatId': req.params.chatId
+		    	});	
+	  		});	 
+	  	}else{
+	  		res.json({
+		    		'messages':0,
+		    		'chatId': 0
+		    	});	
+	  	}
+
+	  		
+	});	
+	
 }
 
 exports.delete = function(req,res){

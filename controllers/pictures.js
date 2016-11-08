@@ -1,6 +1,7 @@
 var picturesController = {};
 var bcrypt 		= require('bcrypt-nodejs');
 var mongoose 	= require('mongoose');
+var async = require('async');
 
 
 var pictureModel = require('../models/pictures').schema();
@@ -26,7 +27,8 @@ picturesController.now = function(){
 }	
 
 picturesController.hasWhiteSpace = function(s) {
-  return /\s/g.test(s);
+	str = s.replace(",", "");
+  return /\s/g.test(str);
 }
 
 picturesController.parseTags = function(tags){
@@ -34,7 +36,7 @@ picturesController.parseTags = function(tags){
 	if(picturesController.hasWhiteSpace(tags)){
 		 res = tags.split(" ");	
 	}else{
-		res = tags;
+		res = [tags];
 	}	
 	return res;
 }
@@ -99,25 +101,52 @@ exports.getPictureById = function(req,res){
 
 exports.getHappeningNow = function(req,res){
 	var now = moment();	
-	// Picture.find({ "dateEndPublish": { $gt: now }}, function (err, docs) {
-	// 	console.log(docs);
-	//    if(err){
-	//         throw err;				        
-	//     }else{
-	//     	res.json({
-	//     		'now':now,
-	//     		'docs':docs
-	//     	});
-	//     }
-	// });
+	
 	Picture.find({"dateEndPublish": { $gt: now }}, function (err, docs) {
-		// console.log(docs);
-	   if (!err){ 
-	        res.json({
+
+		var calls = [];
+		var rst = [];
+		var format = docs.map(function(element){
+			var obj = {};			
+			
+			calls.push(function(callback) {
+				User.findOne({"_id":element['userId']},function(err, docs){
+			        var avatar = docs.avatar || '/images/nobody_m.original.jpg';
+			        var avatarUrl = req.protocol + '://' + req.get('host') +avatar;
+			        var tags = picturesController.parseTags(element['tags']);
+			        console.log('tags',tags);
+					obj['urlPicture'] = element['urlPicture'];
+					obj['url'] = element['url'];
+					obj['dateEndPublish'] = element['dateEndPublish'];
+					obj['dateCreated'] = element['dateCreated'];
+					obj['timmer'] = element['timmer'];
+					obj['location'] = element['location'];
+					obj['description'] = element['description'];
+					obj['tags'] = tags;
+					obj['userId'] = element['userId'];
+					obj['avatar'] = avatarUrl;
+					obj['username'] = docs.username || docs.email;
+					rst.push(obj);
+					callback(null, element);
+					
+	    		})
+				
+			});			
+		})
+
+		async.parallel(calls, function(err, result) {
+		    /* this code will run after all calls finished the job or
+		       when any of the calls passes an error */
+		    if (err)
+		        return console.log(err);
+		    // console.log('now',now);
+		    // console.log('docs',rst);
+		    res.json({
 	    		'now':now,
-	    		'docs':docs
-	    	});	        
-	   } else {throw err;}
+	    		'docs':rst
+	    	});	
+		});
+	
 	});
 	// res.json('docs');
 }

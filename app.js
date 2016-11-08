@@ -13,7 +13,7 @@ var express   = require('express')
   //serve
 
   app.set('port', process.env.PORT || 3005);
-
+  app.use(express.static('public'))
   
   //mongoose.connect('mongodb://192.254.67.45/chatData', function(err){
   mongoose.connect('mongodb://localhost/wishapic', function(err){

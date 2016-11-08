@@ -159,6 +159,30 @@ exports.isUserOnline = function(req, res){
 }
 
 
+exports.getUserById = function(req, res){
+	var id = req.params.id;
+	
+	User.findOne({"_id":id},function(err, docs){
+		var obj = {};
+		var avatar = docs.avatar || '/images/nobody_m.original.jpg';
+        var avatarUrl = req.protocol + '://' + req.get('host') +avatar;
+
+        //prepare obj
+        obj['username'] = docs.username || docs.email;
+        obj['avatar'] = avatarUrl;
+        obj['age'] = docs.age;
+        obj['country'] = docs.country;
+        obj['email'] = docs.email;
+        obj['id'] = docs.id;
+
+
+		res.json({
+			'user': obj
+    	});	
+	});
+	
+}
+
 
 
 

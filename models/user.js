@@ -22,5 +22,6 @@ exports.schema = function(req, res){
 			gender: String,
 			age: Number,
 			profilePicture: String,
+			avatar: String,
 		});
 }
